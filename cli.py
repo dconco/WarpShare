@@ -1,19 +1,35 @@
 import os
 import typer
 from rich.console import Console
+from utils.network_ip import get_local_ip
+from server import create_app
+from waitress import serve
 
 # Initialize Typer and Rich console for clean formatting
-app = typer.Typer(
+cli = typer.Typer(
    name="WarpShare",
    help="⚡ Instant file sharing CLI tool (Local Wi-Fi & Remote Internet) ⚡",
    add_completion=False,
 )
 console = Console()
 
-@app.command(name="local")
+
+
+def start_server(host: str, port: int):
+   app = create_app()
+   serve(app, host=host, port=port)
+
+def tunnel(port):
+   import subprocess
+   subprocess.run(["cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"])
+
+
+# LOCAL SHARE
+
+@cli.command(name="local")
 def local_share(
    path: str = typer.Argument(os.getcwd(), help="The directory path or file to share"),
-   port: int = typer.Option(8080, "--port", "-p", help="Port to run the local server on"),
+   port: int = typer.Option(3301, "--port", "-p", help="Port to run the local server on"),
 ):
    """
    Share files instantly with anyone on your local Wi-Fi network.
@@ -22,17 +38,27 @@ def local_share(
       console.print(f"[bold red]Error:[/bold red] Path '{path}' does not exist.")
       raise typer.Exit(code=1)
 
-   console.print(f"[bold green]Starting Local Sharing Server...[/bold green]")
+   ip = get_local_ip()
+
+   if ip is None:
+      console.print(f"[bold red]Error:[/bold red] No Network IP found. Make sure you're connected to the same network with the receiver.")
+      raise typer.Exit(code=1)
+
+   console.print(f"[bold green]Local Sharing Server started at http://{ip}:{port}[/bold green]")
    console.print(f"[yellow]Target Folder:[/yellow] {os.path.abspath(path)}")
    console.print(f"[yellow]Port:[/yellow] {port}")
-   
-   # TODO: Inject the local HTTP server logic & QR code generation here
 
-@app.command(name="remote")
+   start_server(ip, port)
+
+# ONLINE SHARE
+
+@cli.command(name="remote")
 def remote_share(
    path: str = typer.Argument(os.getcwd(), help="The directory path or file to share"),
    port: int = typer.Option(8080, "--port", "-p", help="Internal port for the tunnel"),
 ):
+   import threading
+
    """
    Share files over the public internet with a remote receiver.
    """
@@ -42,9 +68,15 @@ def remote_share(
 
    console.print(f"[bold cyan]Initializing Secure Remote Connection...[/bold cyan]")
    console.print(f"[yellow]Target Folder:[/yellow] {os.path.abspath(path)}")
-   
-   # TODO: Inject Ngrok/WebRTC tunneling logic here
+
+   host = "127.0.0.1"
+   t = threading.Thread(target=start_server, args=(host, port), daemon=True)
+   t.start()
+
+   console.print(f"[bold green]Server running, starting tunnel...[/bold green]")
+   tunnel(port)  # blocks here, keeps process alive
+
 
 if __name__ == "__main__":
-   app()
+   cli()
    
