@@ -5,6 +5,7 @@ from waitress import serve
 from rich.console import Console
 from helpers.tunnel import start_tunnel
 from utils.network_ip import get_local_ip
+from utils.secrets_filter import confirm_to_share_secrets_in_cwd
 
 # Initialize Typer and Rich console for clean formatting
 cli = typer.Typer(
@@ -31,18 +32,21 @@ def local_share(
    Share files instantly with anyone on your local Wi-Fi network.
    """
    if not os.path.exists(path):
-      console.print(f"[bold red][Error:][/bold red] Path '{path}' does not exist.")
+      console.print(f"[bold red][Error][/bold red] Path '{path}' does not exist.")
       raise typer.Exit(code=1)
 
    ip = get_local_ip()
 
    if ip is None:
-      console.print(f"[bold red][Error:][/bold red] No Network IP found. Make sure you're connected to the same network with the receiver.")
+      console.print(f"[bold red][Error][/bold red] No Network IP found. Make sure you're connected to the same network with the receiver.")
       raise typer.Exit(code=1)
 
-   console.print(f"[bold green]Local Sharing Server started at http://{ip}:{port}[/bold green]")
-   console.print(f"[yellow]Target Folder:[/yellow] {os.path.abspath(path)}")
    console.print(f"[yellow]Port:[/yellow] {port}")
+   console.print(f"[yellow]Target Folder:[/yellow] {os.path.abspath(path)}")
+
+   confirm_to_share_secrets_in_cwd(path)
+
+   console.print(f"\n[bold green]Local Sharing Server started at http://{ip}:{port}[/bold green]")
 
    start_server(ip, port)
 
@@ -59,11 +63,13 @@ def remote_share(
    Share files over the public internet with a remote receiver.
    """
    if not os.path.exists(path):
-      console.print(f"[bold red][Error:][/bold red] Path '{path}' does not exist.")
+      console.print(f"[bold red][Error][/bold red] Path '{path}' does not exist.")
       raise typer.Exit(code=1)
 
    console.print(f"[bold cyan]Initializing Secure Remote Connection...[/bold cyan]")
    console.print(f"[yellow]Target Folder:[/yellow] {os.path.abspath(path)}")
+
+   confirm_to_share_secrets_in_cwd(path)
 
    host = "127.0.0.1"
    t = threading.Thread(target=start_server, args=(host, port), daemon=True)
