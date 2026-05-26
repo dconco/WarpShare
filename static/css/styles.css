@@ -6,12 +6,16 @@
 
     /*Accent*/
     --main-accent: #6366f1;
+    --accent-low: rgba(99, 102, 241, 0.12);
+    --darker: #4f46e5;
+    --lighter: #a5b4fc;
 
     /*Text*/
     --primary-text: #e8eaf2;
     --muted-text: #6b7280;
 
     --border-color: hsla(233, 84%, 67%, 0.149);
+    --border-hover: rgba(99, 102, 241, 0.40);
 
     --success: #10b981;
 }
@@ -39,6 +43,11 @@ body {
     div {
         display: flex;
         align-items: center;
+    }
+    .left {
+        gap: 0.5rem;
+    }
+    .right {
         gap: 0.5rem;
     }
 }
@@ -84,16 +93,54 @@ button {
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
 .upload {
     background-color: var(--main-accent);
+    &:hover {
+        background-color: var(--darker);
+    }
 }
 .new-folder {
-    width: 8rem;
+    width: 9rem;
     background-color: var(--elevated-surface);
     border: 1px solid var(--border-color);
+    &:hover {
+        border-color: var(--border-hover);
+        color: var(--lighter);
+        background-color: var(--accent-low);
+        svg {
+            fill: var(--lighter);
+        }
+    }
 }
 .view {
-    width: 5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    height: 2.5rem;
+    width: 4rem;
+    overflow: hidden;
+    button {
+        position: relative;
+        width: 50%;
+        height: 100%;
+        border-radius: 0;
+        background: none;
+        svg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+    .active {
+        background-color: var(--accent-low);
+        svg {
+            fill: var(--main-accent);
+        }
+    }
 }
